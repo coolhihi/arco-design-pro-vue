@@ -157,7 +157,7 @@
               <template #content>
                 <div id="tableSetting">
                   <div
-                    v-for="(item, index) in showColumns"
+                    v-for="item in showColumns"
                     :key="item.dataIndex"
                     class="setting"
                   >
@@ -165,12 +165,7 @@
                       <icon-drag-arrow />
                     </div>
                     <div>
-                      <a-checkbox
-                        v-model="item.checked"
-                        @change="
-                          handleChange($event, item as TableColumnData, index)
-                        "
-                      >
+                      <a-checkbox v-model="item.checked" @change="handleChange">
                       </a-checkbox>
                     </div>
                     <div class="title">
@@ -417,36 +412,9 @@
     size.value = val as SizeProps;
   };
 
-  const handleChange = (
-    checked: boolean | (string | boolean | number)[],
-    column: Column,
-    index: number
-  ) => {
-    if (!checked) {
-      cloneColumns.value = showColumns.value.filter(
-        (item) => item.dataIndex !== column.dataIndex
-      );
-    } else {
-      cloneColumns.value.splice(index, 0, column);
-    }
-  };
-
-  const exchangeArray = <T extends Array<any>>(
-    array: T,
-    beforeIdx: number,
-    newIdx: number,
-    isDeep = false
-  ): T => {
-    const newArray = isDeep ? cloneDeep(array) : array;
-    if (beforeIdx > -1 && newIdx > -1) {
-      // 先替换后面的，然后拿到替换的结果替换前面的
-      newArray.splice(
-        beforeIdx,
-        1,
-        newArray.splice(newIdx, 1, newArray[beforeIdx]).pop()
-      );
-    }
-    return newArray;
+  const handleChange = () => {
+    // 重新获取显示字段
+    cloneColumns.value = showColumns.value.filter((item) => item.checked);
   };
 
   const popupVisibleChange = (val: boolean) => {
@@ -456,8 +424,10 @@
         const sortable = new Sortable(el, {
           onEnd(e: any) {
             const { oldIndex, newIndex } = e;
-            exchangeArray(cloneColumns.value, oldIndex, newIndex);
-            exchangeArray(showColumns.value, oldIndex, newIndex);
+            if (oldIndex === newIndex) return;
+            const item = showColumns.value.splice(oldIndex, 1)[0]; // 取出旧下标的元素
+            showColumns.value.splice(newIndex, 0, item); // 插入到新下标的位置
+            handleChange();
           },
         });
       });
